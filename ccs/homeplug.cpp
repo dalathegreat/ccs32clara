@@ -75,8 +75,8 @@ static uint8_t nRemainingStartAttenChar;
 static uint8_t remainingNumberOfSounds;
 static uint8_t AttenCharIndNumberOfSounds;
 static uint8_t SdpRepetitionCounter;
-static uint8_t sdp_state;
 static uint8_t nEvseModemMissingCounter;
+static bool sdp_ongoing;
 
 /********** local prototypes *****************************************/
 static void composeAttenCharRsp(void);
@@ -786,17 +786,17 @@ void runSdpStateMachine(void)
    if (connMgr_getConnectionLevel()<15)
    {
       /* We have no AVLN established, and SLAC is not ongoing. It does not make sense to start SDP. */
-      sdp_state = 0;
+      sdp_ongoing = false;
       return;
    }
    if (connMgr_getConnectionLevel()>20)
    {
       /* SDP was already successful. No need to run it again. */
-      sdp_state = 0;
+      sdp_ongoing = false;
       return;
    }
    /* The ConnectionLevel demands the SDP. */
-   if (sdp_state==0)
+   if (sdp_ongoing == false)
    {
       // Next step is to discover the chargers communication controller (SECC) using discovery protocol (SDP).
       publishStatus("SDP ongoing", "");
@@ -804,10 +804,10 @@ void runSdpStateMachine(void)
       setCheckpoint(200);
       pevSequenceDelayCycles=0;
       SdpRepetitionCounter = 50; // prepare the number of retries for the SDP. The more the better.
-      sdp_state = 1;
+      sdp_ongoing = true;
       return;
    }
-   if (sdp_state == 1)   // SDP request transmission and waiting for SDP response.
+   if (sdp_ongoing == true)   // SDP request transmission and waiting for SDP response.
    {
       /* The normal state transition in case of received SDP response is done in
          the IPv6 receive handler. This will inform the ConnectionManager, and we will stop here
@@ -829,7 +829,7 @@ void runSdpStateMachine(void)
       }
       // All repetitions are over, no SDP response was seen. Back to the beginning.
       addToTrace(MOD_HOMEPLUG, "[SDP] ERROR: Did not receive SDP response. Giving up.");
-      sdp_state = 0;
+      sdp_ongoing = false;
    }
 }
 
@@ -884,11 +884,6 @@ int homeplug_sanityCheck(void)
    {
       //addToTrace("ERROR: Sanity check of the homeplug state machine failed." + String(pevSequenceState));
       addToTrace(MOD_HOMEPLUG, "ERROR: Sanity check of the homeplug state machine failed.");
-      return -1;
-   }
-   if (sdp_state>=2)
-   {
-      addToTrace(MOD_HOMEPLUG, "ERROR: Sanity check of the SDP state machine failed.");
       return -1;
    }
    return 0;
