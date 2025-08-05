@@ -11,7 +11,7 @@
 
 #include "ccs32_globals.h"
 
-uint8_t hwIf_isInletVoltageError = false;
+bool hwIf_isInletVoltageError = false;
 
 
 /* cyclic runnable in 100ms. Reads the different inputs for inlet voltage and calculates

@@ -62,7 +62,7 @@ extern void hardwareInterface_cyclic(void);
 extern void hardwareInterface_init(void);
 
 /* shared variables */
-extern uint8_t hwIf_isInletVoltageError;
+extern bool hwIf_isInletVoltageError;
 
 #ifdef __cplusplus
 }
